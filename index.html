@@ -3,6 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Spencer and Benedict McKay - Australian 49er team racing towards Los Angeles 2028 and Brisbane 2032. Results, 2027 season and patrons program.">
+<meta property="og:title" content="Spencer &amp; Benedict McKay - Australian 49er Team">
+<meta property="og:description" content="Two brothers racing the Olympic 49er for Australia. Results, 2027 season and patrons program.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#071219">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9B%B5%3C/text%3E%3C/svg%3E">
 <title>McKay 49er Campaign</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -308,40 +315,6 @@ header.nav{
 footer{border-top:1px solid var(--line);padding-block:30px;font-family:var(--f-ui);font-size:12px;color:var(--muted)}
 .foot-in{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
 
-/* ---------- edit mode ---------- */
-#edbar{
-  position:fixed;right:18px;bottom:18px;z-index:200;display:flex;align-items:center;gap:8px;
-  background:var(--surface);border:1px solid var(--line);border-radius:3px;padding:8px;
-  box-shadow:0 10px 34px rgba(0,0,0,.28);font-family:var(--f-ui);
-}
-#edbar button{
-  font-family:var(--f-ui);font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
-  padding:9px 14px;border-radius:2px;cursor:pointer;border:1px solid var(--line);
-  background:transparent;color:var(--text);transition:all .16s;
-}
-#edbar button:hover{border-color:var(--accent)}
-#edbar button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-fill-text)}
-#edbar #edsave{display:none}
-#edbar.editing #edsave{display:inline-block}
-#edstate{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding-inline:4px;white-space:nowrap}
-@media print{#edbar{display:none}}
-
-body.editing [contenteditable="true"]{
-  outline:1px dashed color-mix(in srgb,var(--accent) 55%,transparent);
-  outline-offset:3px;border-radius:2px;cursor:text;
-}
-body.editing [contenteditable="true"]:hover{outline-style:solid;outline-color:color-mix(in srgb,var(--accent) 70%,transparent)}
-body.editing [contenteditable="true"]:focus{outline:2px solid var(--accent);outline-offset:3px;background:color-mix(in srgb,var(--accent) 9%,transparent)}
-body.editing .hero [contenteditable="true"],body.editing .band [contenteditable="true"]{outline-color:rgba(244,197,66,.75)}
-#edtoast{
-  position:fixed;left:50%;bottom:82px;transform:translateX(-50%) translateY(8px);z-index:201;
-  background:var(--surface);border:1px solid var(--accent);border-left-width:3px;border-radius:2px;
-  padding:12px 18px;font-family:var(--f-ui);font-size:13.5px;color:var(--text);
-  box-shadow:0 10px 34px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;
-  max-width:min(460px,calc(100vw - 36px));line-height:1.45;
-}
-#edtoast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
 /* ---------- motion ---------- */
 .rv{opacity:0;transform:translateY(18px)}
 .rv.in{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.2,.7,.3,1),transform .7s cubic-bezier(.2,.7,.3,1)}
@@ -625,12 +598,7 @@ html{scroll-behavior:smooth}
   </footer>
 </main>
 
-<div id="edbar">
-  <span id="edstate">Viewing</span>
-  <button id="edtoggle" type="button" aria-pressed="false">Edit text</button>
-  <button id="edsave" type="button">Save a copy</button>
-</div>
-<div id="edtoast" role="status" aria-live="polite"></div>
+
 
 <script>
 (function(){
@@ -676,7 +644,6 @@ html{scroll-behavior:smooth}
    page navigation instead of a scroll. Handling it in JS makes it work everywhere. */
 (function(){
   document.addEventListener('click', function(e){
-    if (document.body.classList.contains('editing')) return;   /* edit mode suppresses nav */
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     var a = e.target && e.target.closest ? e.target.closest('a') : null;
     if (!a) return;
@@ -694,107 +661,6 @@ html{scroll-behavior:smooth}
   }, false);
 })();
 
-/* ---------- edit mode: retype any text, then save a copy ---------- */
-(function(){
-  var SEL = [
-    'header .mark','.nav-links a',
-    'main h1','main h2','main h3','main h4',
-    'main p','main li','main figcaption','main span.credit',
-    '.place','.cls','.key','.trip-n','.when',
-    '.stat .k','.stat .v','.stat .s',
-    '.field .k','.field .v','.cost .n',
-    'footer span'
-  ].join(',');
-
-  var bar    = document.getElementById('edbar');
-  var toggle = document.getElementById('edtoggle');
-  var save   = document.getElementById('edsave');
-  var state  = document.getElementById('edstate');
-  var toast  = document.getElementById('edtoast');
-  var editing = false, toastT;
-
-  function nodes(){ return [].slice.call(document.querySelectorAll(SEL)); }
-
-  function say(msg, ms){
-    toast.textContent = msg; toast.classList.add('show');
-    clearTimeout(toastT); toastT = setTimeout(function(){ toast.classList.remove('show'); }, ms || 4200);
-  }
-
-  function setEditing(on){
-    editing = on;
-    document.body.classList.toggle('editing', on);
-    bar.classList.toggle('editing', on);
-    toggle.classList.toggle('on', on);
-    toggle.textContent = on ? 'Done editing' : 'Edit text';
-    toggle.setAttribute('aria-pressed', on ? 'true' : 'false');
-    state.textContent = on ? 'Editing' : 'Viewing';
-    nodes().forEach(function(n){
-      if (on) { n.setAttribute('contenteditable','true'); n.spellcheck = true; }
-      else    { n.removeAttribute('contenteditable'); }
-    });
-    if (on) say('Click any text and retype it. When you are finished, hit Save a copy to download the updated site.', 7000);
-  }
-
-  toggle.addEventListener('click', function(){ setEditing(!editing); });
-
-  /* keep links from navigating away mid-edit */
-  document.addEventListener('click', function(e){
-    if (!editing) return;
-    var a = e.target.closest && e.target.closest('a');
-    if (a) e.preventDefault();
-  }, true);
-
-  /* paste as plain text so pasted styling never leaks in */
-  document.addEventListener('paste', function(e){
-    if (!editing) return;
-    var t = e.target;
-    if (!(t.closest && t.closest('[contenteditable="true"]'))) return;
-    e.preventDefault();
-    var txt = (e.clipboardData || window.clipboardData).getData('text/plain');
-    document.execCommand('insertText', false, txt);
-  });
-
-  /* Enter inserts a line break rather than a new block element */
-  document.addEventListener('keydown', function(e){
-    if (!editing || e.key !== 'Enter' || e.shiftKey) return;
-    var t = e.target;
-    if (!(t.closest && t.closest('[contenteditable="true"]'))) return;
-    e.preventDefault();
-    document.execCommand('insertLineBreak');
-  });
-
-  window.addEventListener('beforeunload', function(e){
-    if (!editing) return;
-    e.preventDefault(); e.returnValue = '';
-  });
-
-  save.addEventListener('click', function(){
-    var wasEditing = editing;
-    if (wasEditing) setEditing(false);          /* strip contenteditable before serialising */
-    toast.classList.remove('show');
-
-    var clone = document.documentElement.cloneNode(true);
-    var t = clone.querySelector('#edtoast'); if (t) t.textContent = '';
-    var b = clone.querySelector('#edbar');
-    if (b) { b.classList.remove('editing');
-      var tg = b.querySelector('#edtoggle');
-      if (tg) { tg.classList.remove('on'); tg.textContent = 'Edit text'; tg.setAttribute('aria-pressed','false'); }
-      var st = b.querySelector('#edstate'); if (st) st.textContent = 'Viewing';
-    }
-    clone.querySelector('body').classList.remove('editing');
-    [].slice.call(clone.querySelectorAll('[contenteditable]')).forEach(function(n){ n.removeAttribute('contenteditable'); });
-
-    var html = '<!doctype html>\n' + clone.outerHTML;
-    var url = URL.createObjectURL(new Blob([html], {type:'text/html'}));
-    var a = document.createElement('a');
-    a.href = url; a.download = 'mckay-49er-campaign.html';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
-
-    say('Saved to your Downloads folder as mckay-49er-campaign.html. Move it into your Campaign website folder to keep going.', 7000);
-    if (wasEditing) setTimeout(function(){ setEditing(true); }, 400);
-  });
-})();
 </script>
 </body>
 </html>
